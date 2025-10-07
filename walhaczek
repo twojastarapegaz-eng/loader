@@ -1,0 +1,373 @@
+if game.GameId == 151616126 then
+	print("YOO")
+else
+	local HyperEscape = { -- fuck Off I Like It, Even Tho It Is Anoying.
+		AimBot = { -- Same Targeting System Just Sticky Aim Now.
+			Enabled = false; -- No Need To Change Anything Here As It Is On The GUI
+			TeamCheck = false;
+			WallCheck = true;
+			StickyAim = false; -- This Will Stick To The Same Target.
+
+			UseMouse = true;
+			MouseBind = "MouseButton2";
+			Keybind = Enum.KeyCode.E;  
+
+			ShowFov = false;
+			Fov = 100;
+
+			Smoothing = 0.02;
+
+			AimPart = "HumanoidRootPart";
+
+			Thickness = 1;
+			FovFillColor = Color3.fromRGB(100,0,100);
+			FovColor = Color3.fromRGB(100,0,100);
+			FovFillTransparency = 1;
+			FovTransparenct = 0;
+
+			IsAimKeyDown = false; -- Don't Touch Anything Here Niggas 
+			Target = nil;
+			CameraTween = nil;
+		};
+
+		esp = {
+			Enabled = true;
+			TeamCheck = false;
+			
+			MaxDistance = 200;
+			
+			CharacterSize = Vector2.new(5,6);
+			
+			Box = {
+				Box = false;
+				Name = true;
+				Distance = true;
+                HealthBar = true;
+
+				Color = Color3.fromRGB(255, 255, 255);
+
+				Outline = false;
+				OutlineColor = Color3.fromRGB(0,0,0);	
+			};
+		};
+	};
+
+	local players = game.Players;
+	local localPlayer = players.LocalPlayer;
+	local CurrentCamera = game.Workspace.CurrentCamera;
+	local TweenService = game.TweenService;
+	local UIS = game.UserInputService;
+	local mouseLocation = UIS.GetMouseLocation;
+	local CoreGui = game:FindFirstChild("CoreGui");
+
+	function library()
+		local library = { 
+			flags = { };
+			items = { };
+		}
+
+		local StarterGUI = game.Players.LocalPlayer.PlayerGui;
+		local CoreGui = game:FindFirstChild("CoreGui");
+		local textservice = game:GetService("TextService");
+		local httpservice = game:GetService("HttpService");
+
+		library.theme = {
+			BackGround = Color3.fromRGB(30, 30, 30);
+			BackGround2 = Color3.fromRGB(38, 38, 38);
+
+			Border = Color3.fromRGB(0, 0, 0);
+
+			Toggle = Color3.fromRGB(62, 62, 62);
+			Selected = Color3.fromRGB(85, 0, 255);
+
+			Font = Enum.Font.Ubuntu;
+			TextSize = 14;
+			TextColor = Color3.fromRGB(255, 255, 255);
+		};
+
+
+		return library;
+	end
+	
+	local IsArsenal = false;
+	if game.PlaceId == 286090429 then
+		IsArsenal = true;
+	end
+
+	local DeleteMobLib = library();
+	local ESPHolder = Instance.new("Folder", (CoreGui)); 
+
+	local function IsAlive(Player)
+		if Player and Player.Character and Player.Character:FindFirstChild("Humanoid") ~= nil and (IsArsenal and players[Player.Character.Name].NRPBS["Health"].Value > 0 or not IsArsenal and Player.Character.Humanoid.Health > 0) then
+			return true
+		end
+		return false
+	end
+
+	local function GetTeam(Player)
+		if not game.Players.LocalPlayer.Neutral then
+			return game.Teams[Player.Team.Name];
+		end
+		return true;
+	end
+
+	function isVisible(p, ...)
+
+		if not (HyperEscape.AimBot.WallCheck == true) then
+			return true;
+		end
+
+		return #CurrentCamera:GetPartsObscuringTarget({ p }, { CurrentCamera, localPlayer.Character, ... }) == 0;
+	end
+
+	function CameraGetClosestToMouse()
+		local AimFov = HyperEscape.AimBot.Fov;
+		local targetPos = nil;
+
+		for i,v in pairs (game:GetService("Players"):GetPlayers()) do
+			if v ~= localPlayer then
+				if HyperEscape.AimBot.TeamCheck ~= true or GetTeam(v) ~= GetTeam(localPlayer) then 
+					if IsAlive(v) then
+						local screen_pos, on_screen = CurrentCamera:WorldToViewportPoint(v.Character[HyperEscape.AimBot.AimPart].Position)
+						local screen_pos_2D = Vector2.new(screen_pos.X, screen_pos.Y)
+						local new_magnitude = (screen_pos_2D - mouseLocation(UIS)).Magnitude
+						if on_screen and new_magnitude < AimFov and isVisible(v.Character[HyperEscape.AimBot.AimPart].Position, v.Character.Head.Parent) then
+							AimFov = new_magnitude;
+							targetPos = v;
+						end
+					end
+				end
+			end
+		end
+		return targetPos;
+	end
+
+local function LoadESP(Player) -- I Thought It Would Be Harder To Make, Idk Why
+		local PlayerESP = Instance.new("Folder", ESPHolder);
+		PlayerESP.Name = Player.Name .. "ESP";
+		-- Box
+		local BoxHolder = Instance.new("ScreenGui", PlayerESP);
+		BoxHolder.Name = "Box";
+		BoxHolder.DisplayOrder = 2;
+        
+
+		local Name = Instance.new("TextLabel", BoxHolder);
+		Name.BackgroundTransparency = 1;
+		Name.Text = Player.Name;
+		Name.Visible = false;
+		Name.AnchorPoint = Vector2.new(0.5, 0.5);
+		Name.TextSize = 12;
+		Name.Font = 2;
+		Name.TextColor3 = Color3.fromRGB(255, 255, 255);
+		Name.TextStrokeTransparency = 0;
+
+		local HealthBar = Instance.new("Frame", BoxHolder);
+		HealthBar.Visible = false;
+		HealthBar.BorderSizePixel = 0;
+		HealthBar.BackgroundColor3 = Color3.fromRGB(0, 255 ,0); 
+
+		local co = coroutine.create(function()
+			game:GetService("RunService").RenderStepped:Connect(function()
+				if IsAlive(Player) and (HyperEscape.esp.Box.Box or HyperEscape.esp.Box.HealthBar or HyperEscape.esp.Box.Name or HyperEscape.esp.Box.Health) then
+					local screen, onScreen = CurrentCamera:WorldToScreenPoint(Player.Character:WaitForChild("HumanoidRootPart").Position); 
+					local frustumHeight = math.tan(math.rad(CurrentCamera.FieldOfView * 0.5)) * 2 * screen.Z ; -- Thank you mickeydev, Join .gg/lunarity for the best paid script hub for fps games made by known and trusted developers. 
+					local size = CurrentCamera.ViewportSize.Y / frustumHeight * HyperEscape.esp.CharacterSize;
+					local position = Vector2.new(screen.X, screen.Y) - (size / 2 - Vector2.new(0, size.Y) / 20);
+
+					if onScreen and (HyperEscape.esp.TeamCheck ~= true  or GetTeam(Player) ~= GetTeam(localPlayer)) and HyperEscape.esp.Enabled then	
+						local DistanceNumb = math.floor(0.5+(CurrentCamera.CFrame.Position - Player.Character.HumanoidRootPart.Position).magnitude);
+						if HyperEscape.esp.MaxDistance > DistanceNumb then
+                            if HyperEscape.esp.Box.HealthBar then
+								if BoxHolder:FindFirstChild("Frame") then
+									local HealthBar = BoxHolder.Frame
+									local health = (IsArsenal and players[Player.Character.Name].NRPBS["Health"].Value or Player.Character.Humanoid.Health);
+									local healthScale = (IsArsenal and health / players[Player.Character.Name].NRPBS["MaxHealth"].Value or health / Player.Character.Humanoid.MaxHealth);
+									local healthSizeY = size.Y * healthScale;
+
+									HealthBar.Visible = HyperEscape.esp.Box.HealthBar;
+
+									HealthBar.Size = UDim2.fromOffset(2, -healthSizeY);
+
+									HealthBar.Position = UDim2.fromOffset(position.x - 7, position.y + size.Y);
+								end
+							end
+							if HyperEscape.esp.Box.Distance or HyperEscape.esp.Box.Name then
+								if BoxHolder:FindFirstChild("TextLabel") then
+									local Name = BoxHolder.TextLabel
+									Name.BackgroundTransparency = 1;
+									Name.Text = Player.Name;
+									Name.Visible = false;
+									Name.AnchorPoint = Vector2.new(0.5, 0.5);
+									Name.TextSize = 12;
+									Name.Font = 2;
+									Name.TextColor3 = Color3.fromRGB(255, 255, 255);
+									Name.TextStrokeTransparency = 0;
+									Name.Visible = HyperEscape.esp.Box.Name;
+
+									Name.Position = UDim2.fromOffset(screen.X, screen.Y - (size.Y + Name.TextBounds.Y + 14) / 2);
+									Name.Text = (HyperEscape.esp.Box.Name and HyperEscape.esp.Box.Distance and Player.Name .. " [" .. math.floor(0.5+(CurrentCamera.CFrame.Position - Player.Character.HumanoidRootPart.Position).magnitude / 3.5714285714) .. "]" or Player.Name);
+								else
+									local Name = Instance.new("TextLabel", BoxHolder);
+									Name.BackgroundTransparency = 1;
+									Name.Text = Player.Name;
+									Name.Visible = false;
+									Name.AnchorPoint = Vector2.new(0.5, 0.5);
+									Name.TextSize = 12;
+									Name.Font = 2;
+									Name.TextColor3 = Color3.fromRGB(255, 255, 255);
+									Name.TextStrokeTransparency = 0;
+
+									local HealthBar = Instance.new("Frame", BoxHolder);
+									HealthBar.Visible = false;
+									HealthBar.BorderSizePixel = 0;
+									HealthBar.BackgroundColor3 = Color3.fromRGB(0, 255 ,0); 
+									Name.Visible = HyperEscape.esp.Box.Name;
+
+									Name.Position = UDim2.fromOffset(screen.X, screen.Y - (size.Y + Name.TextBounds.Y + 14) / 2);
+
+									Name.Text = (HyperEscape.esp.Box.Name and HyperEscape.esp.Box.Distance and Player.Name .. " [" .. math.floor(0.5+(CurrentCamera.CFrame.Position - Player.Character.HumanoidRootPart.Position).magnitude / 3.5714285714) .. "]" or Player.Name);
+								end
+							end
+
+
+						else
+							local namedel = BoxHolder:FindFirstChild("TextLabel")
+							if namedel then
+								namedel:Destroy()
+								BoxHolder.Frame:Destroy()
+							end
+						end
+					else
+					    local namedel = BoxHolder:FindFirstChild("TextLabel")
+						if namedel then
+                    		namedel:Destroy()
+							BoxHolder.Frame:Destroy()
+						end
+					end
+
+				else
+					local namedel = BoxHolder:FindFirstChild("TextLabel")
+					if namedel then
+                    	namedel:Destroy()
+						BoxHolder.Frame:Destroy()
+					end
+				end
+			end)
+			if not players:FindFirstChild(Player.Name) then
+				PlayerESP:Destroy()
+				coroutine.yield()
+			end
+		end)
+		coroutine.resume(co)
+	end
+
+
+	for i,plr in pairs(players:GetChildren()) do
+		if plr ~= localPlayer then
+			LoadESP(plr);
+		end
+	end
+
+	players.PlayerAdded:Connect(function(plr)
+		if plr ~= localPlayer then
+			LoadESP(plr);
+		end
+	end)
+	players.PlayerRemoving:Connect(function(plr)
+		if plr ~= localPlayer then
+			local folder = game:GetService("CoreGui"):FindFirstChild("Folder")
+			if folder then
+				local playerESP = folder:FindFirstChild(plr.Name .. "ESP")
+				if playerESP then
+					playerESP:Destroy()
+				end
+			end
+		end
+	end)
+
+	UIS.InputBegan:Connect(function(Key)
+		if Key.KeyCode == HyperEscape.AimBot.Keybind and not HyperEscape.AimBot.UseMouse then
+			HyperEscape.AimBot.Target = CameraGetClosestToMouse();
+			HyperEscape.AimBot.IsAimKeyDown = true;
+		end
+	end)
+	UIS.InputEnded:Connect(function(Key)
+		if Key.KeyCode == HyperEscape.AimBot.Keybind and not HyperEscape.AimBot.UseMouse then
+			HyperEscape.AimBot.Target = CameraGetClosestToMouse();
+			HyperEscape.AimBot.IsAimKeyDown = false;
+			if HyperEscape.AimBot.CameraTween ~= nil then
+				HyperEscape.AimBot.CameraTween:Cancel();
+			end
+		end
+	end)
+
+	localPlayer:GetMouse().Button1Down:Connect(function(Key)
+		if HyperEscape.AimBot.MouseBind == "MouseButton1" and HyperEscape.AimBot.UseMouse then
+			if HyperEscape.AimBot.IsAimKeyDown then
+				HyperEscape.AimBot.Target = CameraGetClosestToMouse();
+				HyperEscape.AimBot.IsAimKeyDown = false;
+				if HyperEscape.AimBot.CameraTween ~= nil then
+					HyperEscape.AimBot.CameraTween:Cancel();
+				end
+			else
+				HyperEscape.AimBot.Target = CameraGetClosestToMouse();
+				HyperEscape.AimBot.IsAimKeyDown = true;
+			end
+		end
+	end)
+	localPlayer:GetMouse().Button1Up:Connect(function(Key)
+		if HyperEscape.AimBot.MouseBind == "MouseButton1" and HyperEscape.AimBot.UseMouse then
+			HyperEscape.AimBot.Target = CameraGetClosestToMouse();
+			HyperEscape.AimBot.IsAimKeyDown = false;
+			if HyperEscape.AimBot.CameraTween ~= nil then
+				HyperEscape.AimBot.CameraTween:Cancel();
+			end
+		end
+	end)
+
+	localPlayer:GetMouse().Button2Down:Connect(function(Key)
+		if HyperEscape.AimBot.MouseBind == "MouseButton2" and HyperEscape.AimBot.UseMouse then
+			HyperEscape.AimBot.Target = CameraGetClosestToMouse();
+			HyperEscape.AimBot.IsAimKeyDown = true;
+		end
+	end)
+	localPlayer:GetMouse().Button2Up:Connect(function(Key)
+		if HyperEscape.AimBot.MouseBind == "MouseButton2" and HyperEscape.AimBot.UseMouse then
+			HyperEscape.AimBot.Target = CameraGetClosestToMouse();
+			HyperEscape.AimBot.IsAimKeyDown = false;
+			if HyperEscape.AimBot.CameraTween ~= nil then
+				HyperEscape.AimBot.CameraTween:Cancel();
+			end
+		end
+	end)
+
+	game:GetService("RunService").Heartbeat:Connect(function() 
+
+		if HyperEscape.AimBot.Enabled then
+			if HyperEscape.AimBot.IsAimKeyDown then
+				if HyperEscape.AimBot.StickyAim then
+					if HyperEscape.AimBot.Target ~= nil then
+
+						if not IsAlive(HyperEscape.AimBot.Target) then -- Yes I Know This Aim Bot Sucks
+							local target = CameraGetClosestToMouse()
+							HyperEscape.AimBot.Target = target;
+							HyperEscape.AimBot.CameraTween = TweenService:Create(CurrentCamera, TweenInfo.new(HyperEscape.AimBot.Smoothing, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {CFrame = CFrame.new(CurrentCamera.CFrame.Position, target.Character[HyperEscape.AimBot.AimPart].Position + HyperEscape.AimBot.target.Character[HyperEscape.AimBot.AimPart].Velocity * (localPlayer:GetNetworkPing() *  Vector3.new()))});
+							HyperEscape.AimBot.CameraTween:Play();
+						end
+						HyperEscape.AimBot.CameraTween = TweenService:Create(CurrentCamera, TweenInfo.new(HyperEscape.AimBot.Smoothing, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {CFrame = CFrame.new(CurrentCamera.CFrame.Position, HyperEscape.AimBot.Target.Character[HyperEscape.AimBot.AimPart].Position + HyperEscape.AimBot.Target.Character[HyperEscape.AimBot.AimPart].Velocity * (localPlayer:GetNetworkPing() * Vector3.new()))});
+						HyperEscape.AimBot.CameraTween:Play();
+					end
+				else
+					local target = CameraGetClosestToMouse();
+					if target ~= nil then
+						HyperEscape.AimBot.CameraTween = TweenService:Create(CurrentCamera, TweenInfo.new(HyperEscape.AimBot.Smoothing, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {CFrame = CFrame.new(CurrentCamera.CFrame.Position,  target.Character[HyperEscape.AimBot.AimPart].Position + target.Character[HyperEscape.AimBot.AimPart].Velocity * (localPlayer:GetNetworkPing() * Vector3.new()))});
+						HyperEscape.AimBot.CameraTween:Play();
+
+					elseif HyperEscape.AimBot.CameraTween ~= nil then
+						HyperEscape.AimBot.CameraTween:Cancel(); 
+					end
+				end
+			end
+		end
+	end)
+end
