@@ -1,12 +1,4 @@
--- Ten skrypt powinien znajdować się w ServerScriptService
-
--- Funkcja zostanie uruchomiona za każdym razem, gdy nowy gracz dołączy do gry
 game.Players.PlayerAdded:Connect(function(player)
-    
-    -- Ustaw wiadomość, która ma się wyświetlić wyrzuconemu graczowi
     local kickMessage = "theres new discord server https://discord.gg/SUm9mTTVcv"
-    
-    -- Wyrzuć gracza z serwera z podaną wiadomością
     player:Kick(kickMessage)
-    
 end)
