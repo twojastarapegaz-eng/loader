@@ -1,1 +1,6 @@
+-- Skrypt do wyrzucenia gracza, gdy skrypt jest wykonywany
 
+local player = game.Players.LocalPlayer  -- Zmiana na gracza, którego chcesz wyrzucić (zwykle można podać konkretną osobę, np. przez ID)
+
+-- Wyrzucenie gracza z określonym powodem
+player:Kick("The script is moved to new discord server, wait for an update! or contact EvilQueRo JOIN: https://discord.gg/SUm9mTTVcv")
