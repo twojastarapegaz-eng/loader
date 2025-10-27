@@ -1,4 +1,1 @@
-game.Players.PlayerAdded:Connect(function(player)
-    local kickMessage = "theres new discord server https://discord.gg/SUm9mTTVcv"
-    player:Kick(kickMessage)
-end)
+
